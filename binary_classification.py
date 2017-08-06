@@ -31,8 +31,8 @@ class BinaryClassifier():
         self.sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
 
         # logger file creation
-        self.logfile = '/'.join([TASK_NAME, 'logs'])
-        self.ckptfile = '/'.join([TASK_NAME, 'checkpoints'])
+        self.logfile = '/'.join(['logs', TASK_NAME])
+        self.ckptfile = '/'.join(['checkpoints', TASK_NAME])
         if not tf.gfile.Exists(self.logfile):
             tf.gfile.MakeDirs(self.logfile)
         if not tf.gfile.Exists(self.ckptfile):
