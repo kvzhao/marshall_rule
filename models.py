@@ -3,7 +3,8 @@ import tensorflow as tf
 
 def variable_summaries(var, name):
     with tf.name_scope('summaries'):
-        tf.summary.scalar(name+'_mean', tf.reduce_mean(var))
+        mean = tf.reduce_mean(var)
+        tf.summary.scalar(name+'_mean', mean)
         tf.summary.scalar(name+'_sparsity', tf.nn.zero_fraction(var))
     with tf.name_scope('stddev'):
         stddev = tf.sqrt(tf.reduce_mean(tf.square(var - mean)))
@@ -31,11 +32,14 @@ class simple_network():
     
     def __call__ (self, x):
         with tf.variable_scope(self.name):
-            h1 = tf.nn.relu(linear(x, self.hidden_size, "hidden1", normalized_columns_initializer(0.01)))
-            variable_summaries(h1)
+            h = tf.nn.relu(linear(x, self.hidden_size, "hidden1", normalized_columns_initializer(0.01)))
+            variable_summaries(h, "hidden1")
+            h = tf.nn.relu(linear(h, self.hidden_size, "hidden2", normalized_columns_initializer(0.01)))
+            variable_summaries(h, "hidden2")
+            h = tf.nn.relu(linear(h, self.hidden_size, "hidden3", normalized_columns_initializer(0.01)))
+            variable_summaries(h, "hidden3")
             # TODO: Avoid hard-coded output size
-            out = linear(h1, 2, "out")
-            variable_summaries(h1, "hidden1")
+            out = linear(h, 2, "out")
             variable_summaries(out, "out_layer")
             return out
 

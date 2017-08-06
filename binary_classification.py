@@ -40,7 +40,7 @@ class BinaryClassifier():
 
         with tf.name_scope('summaries'):
             loss_sum = tf.summary.scalar('loss', self.loss)
-            acc_sum = tf.summary.scalr('accuracy', self.accuracy)
+            acc_sum = tf.summary.scalar('accuracy', self.accuracy)
             self.summary_op = tf.summary.merge_all()
 
         # Saver
