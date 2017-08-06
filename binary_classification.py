@@ -68,10 +68,10 @@ class BinaryClassifier():
             if t % EVAL_PER_STEPS == 0:
                 loss , summary = self.sess.run([self.loss, self.summary_op], feed_dict={self.y: batch_y, self.x: batch_x})
                 self.writer.add_summary(summary, global_step=t)
-                print('Iter [%8d] Time [%5.4f] Loss = %.4f ' % (t, time.time() - start_time, loss))
+                print('Iter [%8d] Time [%5.4f] Training Loss = %.4f ' % (t, time.time() - start_time, loss))
 
             # evaluation per epoch
             if t % STEPS_PER_EPOCH == 0:
                 test_batch_x, test_batch_y = self.data_sampler(TEST_BATCH_SIZE, is_train=False)
                 acc = self.sess.run([self.accuracy], feed_dict={self.x: test_batch_x, self.y: test_batch_y})
-                print('Iter [%8d] Time [%5.4f] Accuracy = %.4f' % (t, time.time() - start_time, acc[0]))
+                print('Iter [%8d] Time [%5.4f] Validation Accuracy = %.4f' % (t, time.time() - start_time, acc[0]))
