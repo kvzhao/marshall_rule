@@ -38,12 +38,10 @@ class simple_network():
             h = tf.nn.relu(linear(x, self.hidden_sizes[0], "input", normalized_columns_initializer(0.01)))
             print ("[MODEL] input layer with size {}".format(self.hidden_sizes[0]))
             variable_summaries(h, "input")
-        for i, size in enumerate(self.hidden_sizes[1:]):
-            print ("[MODEL] layer {} with size {}".format(i+1, size))
-            with tf.variable_scope(self.name):
+            for i, size in enumerate(self.hidden_sizes[1:]):
+                print ("[MODEL] layer {} with size {}".format(i+1, size))
                 h = tf.nn.relu(linear(h, size, "hidden{}".format(i+1), normalized_columns_initializer(0.01)))
                 variable_summaries(h, "hidden{}".format(i+1))
-        with tf.variable_scope(self.name):
             h = tf.nn.relu(linear(h, 2, "output", normalized_columns_initializer(0.01)))
             print ("[MODEL] out layer with size {}".format(2))
             variable_summaries(h, "output")
