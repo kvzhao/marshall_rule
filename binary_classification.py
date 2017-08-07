@@ -5,34 +5,46 @@ from models import simple_network
 from constants import *
 
 class BinaryClassifier():
-    def __init__ (self, hidden_size, data_sampler):
+    def __init__ (self, data_sampler,
+                    task_name,
+                    hidden_sizes,
+                    loss_func = 'softmax_cross_entropy',
+                    learning_rate = 0.001):
         self.data_sampler = data_sampler
         self.num_train = self.data_sampler.num_train
 
-        self.hidden_size = hidden_size
+        self.task_name = task_name
+        self.hidden_sizes = hidden_sizes
+        self.loss_func = loss_func
+        self.learning_rate = learning_rate
 
         # inputs
         self.x = tf.placeholder(tf.float32, [None,] + self.data_sampler.x_dim , name='x')
         self.y = tf.placeholder(tf.int32, [None, self.data_sampler.n_classes], name='y')
 
         # computation graph
-        self.net = simple_network(self.hidden_size)
+        self.net = simple_network(self.hidden_sizes)
+        # building network
         self.logits = self.net(self.x)
-        self.loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=self.logits, labels=self.y))
+        # (TODO) add options
+        if self.loss_func == 'xentropy':
+            self.loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=self.logits, labels=self.y))
+        elif self.loss_func == 'hinge':
+            self.loss = tf.reduce_mean(tf.losses.hinge_loss(logits=self.logits, labels=self.y))
 
         correct_prediction = tf.equal(tf.argmax(self.logits, 1), tf.argmax(self.y, 1))
         self.accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
 
         # Solver
         with tf.control_dependencies(tf.get_collection(tf.GraphKeys.UPDATE_OPS)):
-            self.solver = tf.train.AdamOptimizer(learning_rate=0.001).minimize(self.loss, var_list=self.net.vars)
+            self.solver = tf.train.AdamOptimizer(learning_rate=self.learning_rate).minimize(self.loss, var_list=self.net.vars)
         
         gpu_options = tf.GPUOptions(allow_growth=True)
         self.sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
 
         # logger file creation
-        self.logfile = '/'.join(['logs', TASK_NAME])
-        self.ckptfile = '/'.join(['checkpoints', TASK_NAME])
+        self.logfile = '/'.join(['logs', self.task_name])
+        self.ckptfile = '/'.join(['checkpoints', self.task_name])
         if not tf.gfile.Exists(self.logfile):
             tf.gfile.MakeDirs(self.logfile)
         if not tf.gfile.Exists(self.ckptfile):
@@ -76,3 +88,26 @@ class BinaryClassifier():
                                         feed_dict={self.x: test_batch_x, self.y: test_batch_y})
                 self.writer.add_summary(summary, global_step=t)
                 print('Iter [%8d] Time [%5.4f] Validation Accuracy = %.4f' % (t, time.time() - start_time, acc))
+
+    def overfit_test(self):
+        """
+            One of sanity-check techniques is overfitting test which exam the model 
+            has capability to tackle one small piece of data.
+        """
+        self.sess.run(tf.global_variables_initializer())
+        start_time = time.time()
+        STEPS_PER_EPOCH = int (self.num_train/BATCH_SIZE)
+
+        # only fetch data once
+        batch_x, batch_y = self.data_sampler(BATCH_SIZE, is_train=True)
+        for t in range(0, NUM_EPOCH * STEPS_PER_EPOCH):
+            _, cost = self.sess.run([self.solver, self.loss], feed_dict={self.y: batch_y, self.x: batch_x})
+            # show training loss
+            if t % EVAL_PER_STEPS == 0:
+                summary, loss = self.sess.run([self.summary_op, self.loss], feed_dict={self.y: batch_y, self.x: batch_x})
+                print('Iter [%8d] Time [%5.4f] Training Loss = %.4f ' % (t, time.time() - start_time, loss))
+                self.writer.add_summary(summary, global_step=t)
+
+                if (loss <= 1e-3):
+                    print ('Overfit test is done!')
+                    break
