@@ -11,6 +11,7 @@ class BinaryClassifier():
     def __init__ (self, data_sampler,
                     task_name,
                     hidden_sizes,
+                    solver_type = 'adam', 
                     activation = 'relu',
                     loss_func = 'softmax_cross_entropy',
                     learning_rate = 0.001):
@@ -18,6 +19,7 @@ class BinaryClassifier():
         self.num_train = self.data_sampler.num_train
 
         self.task_name = task_name
+        self.solver_type = solver_type
         self.hidden_sizes = hidden_sizes
         self.activation = activation
         self.loss_func = loss_func
@@ -42,7 +44,10 @@ class BinaryClassifier():
 
         # Solver
         with tf.control_dependencies(tf.get_collection(tf.GraphKeys.UPDATE_OPS)):
-            self.solver = tf.train.AdamOptimizer(learning_rate=self.learning_rate).minimize(self.loss, var_list=self.net.vars)
+            if self.solver_type == 'adam':
+                self.solver = tf.train.AdamOptimizer(learning_rate=self.learning_rate).minimize(self.loss, var_list=self.net.vars)
+            elif self.solver_type == 'sgd':
+                self.solver = tf.train.GradientDescentOptimizer(learning_rate=self.learning_rate).minimize(self.loss, var_list=self.net.vars)
         
         gpu_options = tf.GPUOptions(allow_growth=True)
         self.sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
@@ -56,7 +61,7 @@ class BinaryClassifier():
             tf.gfile.MakeDirs(self.ckptfile)
 
         with tf.name_scope('summaries'):
-            loss_sum = tf.summary.scalar('loss', self.loss)
+            loss_sum = tf.summary.scalar(self.loss_func+'_loss', self.loss)
             acc_sum = tf.summary.scalar('accuracy', self.accuracy)
             self.summary_op = tf.summary.merge_all()
 
