@@ -18,7 +18,7 @@ def main():
                 for lr in LEARNING_RATES:
                     ds = DataSampler()
                     arch = 'arch' + 'x'.join([str(i) for i in hidden_sizes]) + 'lr={}'.format(lr)
-                    task = '_'.join([arch, loss_type])
+                    task = '_'.join([arch, loss_type, solver])
                     print ('[TRAIN] Start experiment: {}'.format(task))
                     classifier = BinaryClassifier(data_sampler=ds, 
                                                 task_name = task,
