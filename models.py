@@ -14,6 +14,7 @@ def variable_summaries(var, name):
     tf.summary.histogram(name+'_histogram', var)
 
 def linear(x, size, name, initializer=None, bias_init=0):
+    print ('linear layer with W_{}x{}, b_{}'.format(x.get_shape()[1], size, size))
     w = tf.get_variable(name + "/w", [x.get_shape()[1], size], initializer=initializer)
     b = tf.get_variable(name + "/b", [size], initializer=tf.constant_initializer(bias_init))
     return tf.matmul(x, w) + b
@@ -26,25 +27,28 @@ def normalized_columns_initializer(std=1.0):
     return _initializer
 
 class simple_network():
-    def __init__ (self, hidden_sizes):
+    def __init__ (self, hidden_sizes, activation='relu'):
         """
             hidden_size: list of size of hidden layers
         """
         self.name = 'network'
+        self.activation = activation
         self.hidden_sizes = hidden_sizes
     
     def build_network(self, x):
+        std = 0.0005
         with tf.variable_scope(self.name):
-            h = tf.nn.relu(linear(x, self.hidden_sizes[0], "input", normalized_columns_initializer(0.01)))
-            print ("[MODEL] input layer with size {}".format(self.hidden_sizes[0]))
+            if self.activation == 'relu':
+                h = tf.nn.relu(linear(x, self.hidden_sizes[0], "input", normalized_columns_initializer(std), bias_init=0.01))
+            elif self.activation == 'none':
+                h = linear(x, self.hidden_sizes[0], "input", normalized_columns_initializer(std), bias_init=0.01)
             variable_summaries(h, "input")
             for i, size in enumerate(self.hidden_sizes[1:]):
-                print ("[MODEL] layer {} with size {}".format(i+1, size))
-                h = tf.nn.relu(linear(h, size, "hidden{}".format(i+1), normalized_columns_initializer(0.01)))
+                if self.activation == 'relu':
+                    h = tf.nn.relu(linear(h, size, "hidden{}".format(i+1), normalized_columns_initializer(std), bias_init=0.01))
+                elif self.activation == 'none':
+                    h = linear(h, size, "hidden{}".format(i+1), normalized_columns_initializer(std), bias_init=0.01)
                 variable_summaries(h, "hidden{}".format(i+1))
-            h = tf.nn.relu(linear(h, 2, "output", normalized_columns_initializer(0.01)))
-            print ("[MODEL] out layer with size {}".format(2))
-            variable_summaries(h, "output")
         return h
 
     def __call__ (self, x):
