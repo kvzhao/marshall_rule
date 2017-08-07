@@ -1,7 +1,7 @@
-TASK_NAME = 'TaskLog'
 
-NUM_EPOCH = 500
-BATCH_SIZE = 32
+# ~ 2000 steps per epoch
+NUM_EPOCH = 50
+BATCH_SIZE = 64
 
 # batch size of testing data
 TEST_BATCH_SIZE = 1024
