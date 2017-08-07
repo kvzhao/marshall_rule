@@ -26,22 +26,31 @@ def normalized_columns_initializer(std=1.0):
     return _initializer
 
 class simple_network():
-    def __init__ (self, hidden_size):
+    def __init__ (self, hidden_sizes):
+        """
+            hidden_size: list of size of hidden layers
+        """
         self.name = 'network'
-        self.hidden_size = hidden_size
+        self.hidden_sizes = hidden_sizes
     
-    def __call__ (self, x):
+    def build_network(self, x):
         with tf.variable_scope(self.name):
-            h = tf.nn.relu(linear(x, self.hidden_size, "hidden1", normalized_columns_initializer(0.01)))
-            variable_summaries(h, "hidden1")
-            h = tf.nn.relu(linear(h, self.hidden_size, "hidden2", normalized_columns_initializer(0.01)))
-            variable_summaries(h, "hidden2")
-            h = tf.nn.relu(linear(h, self.hidden_size, "hidden3", normalized_columns_initializer(0.01)))
-            variable_summaries(h, "hidden3")
-            # TODO: Avoid hard-coded output size
-            out = linear(h, 2, "out")
-            variable_summaries(out, "out_layer")
-            return out
+            h = tf.nn.relu(linear(x, self.hidden_sizes[0], "input", normalized_columns_initializer(0.01)))
+            print ("[MODEL] input layer with size {}".format(self.hidden_sizes[0]))
+            variable_summaries(h, "input")
+        for i, size in enumerate(self.hidden_sizes[1:]):
+            print ("[MODEL] layer {} with size {}".format(i+1, size))
+            with tf.variable_scope(self.name):
+                h = tf.nn.relu(linear(h, size, "hidden{}".format(i+1), normalized_columns_initializer(0.01)))
+                variable_summaries(h, "hidden{}".format(i+1))
+        with tf.variable_scope(self.name):
+            h = tf.nn.relu(linear(h, 2, "output", normalized_columns_initializer(0.01)))
+            print ("[MODEL] out layer with size {}".format(2))
+            variable_summaries(h, "output")
+        return h
+
+    def __call__ (self, x):
+        return self.build_network(x)
 
     @property
     def vars(self):
