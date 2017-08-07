@@ -1,3 +1,6 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 import numpy as np
 import time
 import tensorflow as tf
@@ -8,6 +11,7 @@ class BinaryClassifier():
     def __init__ (self, data_sampler,
                     task_name,
                     hidden_sizes,
+                    activation = 'relu',
                     loss_func = 'softmax_cross_entropy',
                     learning_rate = 0.001):
         self.data_sampler = data_sampler
@@ -15,6 +19,7 @@ class BinaryClassifier():
 
         self.task_name = task_name
         self.hidden_sizes = hidden_sizes
+        self.activation = activation
         self.loss_func = loss_func
         self.learning_rate = learning_rate
 
@@ -23,7 +28,7 @@ class BinaryClassifier():
         self.y = tf.placeholder(tf.int32, [None, self.data_sampler.n_classes], name='y')
 
         # computation graph
-        self.net = simple_network(self.hidden_sizes)
+        self.net = simple_network(self.hidden_sizes, activation=self.activation)
         # building network
         self.logits = self.net(self.x)
         # (TODO) add options
