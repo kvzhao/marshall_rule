@@ -9,12 +9,15 @@ FLAGS = tf.flags.FLAGS
 LOSS_FUNCS = ['xentropy', 'hinge']
 SOLVERS = ['sgd', 'adam']
 LEARNING_RATES = [0.001, 0.01, 0.05, 0.1]
+HIDDEN_SIZES = [[32, 16, 2],
+                [16, 2]]
 
 def main():
     for solver in SOLVERS:
         for loss_type in LOSS_FUNCS:
-            for h1 in range(5):
-                hidden_sizes = [2 ** (h1+2), 2]
+            for h in HIDDEN_SIZES:
+                print ('Hidden sizes = {}'.format(h))
+                hidden_sizes = h
                 for lr in LEARNING_RATES:
                     ds = DataSampler()
                     arch = 'arch' + 'x'.join([str(i) for i in hidden_sizes]) + 'lr={}'.format(lr)
