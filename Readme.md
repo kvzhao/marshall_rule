@@ -40,3 +40,4 @@ tensorboard --logdir=logs
 ### todo list
 * save ckpt 
 * prediction application
+* quantitaive analysis?
