@@ -26,7 +26,7 @@ class BinaryClassifier():
         self.learning_rate = learning_rate
 
         # inputs
-        self.x = tf.placeholder(tf.float32, [None,] + self.data_sampler.x_dim , name='x')
+        self.x = tf.placeholder(tf.float32, [None, self.data_sampler.x_dim] , name='x')
         self.y = tf.placeholder(tf.int32, [None, self.data_sampler.n_classes], name='y')
 
         # computation graph
@@ -41,6 +41,8 @@ class BinaryClassifier():
 
         correct_prediction = tf.equal(tf.argmax(self.logits, 1), tf.argmax(self.y, 1))
         self.accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
+
+        self.confusion_matrix = tf.contrib.metrics.confusion_matrix(labels=tf.argmax(self.y, 1), predictions=tf.argmax(self.logits, 1)) 
 
         # Solver
         with tf.control_dependencies(tf.get_collection(tf.GraphKeys.UPDATE_OPS)):
@@ -94,10 +96,11 @@ class BinaryClassifier():
             # evaluation per epoch
             if t % STEPS_PER_EPOCH == 0:
                 test_batch_x, test_batch_y = self.data_sampler(TEST_BATCH_SIZE, is_train=False)
-                loss, acc, summary = self.sess.run([self.loss, self.accuracy, self.summary_op],
+                loss, acc, summary, confmat = self.sess.run([self.loss, self.accuracy, self.summary_op, self.confusion_matrix],
                                         feed_dict={self.x: test_batch_x, self.y: test_batch_y})
                 self.writer.add_summary(summary, global_step=t)
                 print('Iter [%8d] Time [%5.4f] Validation Accuracy = %.4f' % (t, time.time() - start_time, acc))
+                print('Confusion : \n\t{} \n\t{}'.format(confmat[0], confmat[1]))
 
     def overfit_test(self):
         """
