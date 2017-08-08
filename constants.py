@@ -1,4 +1,6 @@
 
+DATA_PATH = "datasetCoeffs/train.txt"
+LABEL_PATH = "datasetCoeffs/label.txt"
 # ~ 2000 steps per epoch
 NUM_EPOCH = 50
 BATCH_SIZE = 64
