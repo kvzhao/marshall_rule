@@ -3,7 +3,7 @@ import os, sys
 import collections
 
 from random import shuffle
-from constants import DATA_PATH, LABEL_PATH
+from constants import DATA_PATH, LABEL_PATH, DATA_NORMALIZED
 
 def read_data_sets(normalized=True):
     ## read data, hard-coded
@@ -22,13 +22,13 @@ def read_data_sets(normalized=True):
     print ('Training set contains {} and testing set {}'.format(train_images.shape[0], test_images.shape[0]))
 
     trainset = DataSet(images=train_images, labels=train_labels, normalized=normalized)
-    testset = DataSet(images=test_images, labels=test_labels, normalized=True)
+    testset = DataSet(images=test_images, labels=test_labels, normalized=normalized)
     return trainset, testset
 
 class DataSampler(object):
     def __init__ (self):
         #TODO: dont use hard-coded
-        self.train_set, self.test_set = read_data_sets(normalized=True)
+        self.train_set, self.test_set = read_data_sets(normalized=DATA_NORMALIZED)
         self.num_train = self.train_set._num_of_samples
         self.num_test  = self.test_set._num_of_samples
         self.x_dim = self.train_set._image_shape[0]
@@ -51,7 +51,7 @@ class DataSet(object):
         self._label_shape = labels.shape[1:]
         self._epochs_completed = 0
         self._index_in_epoch = 0
-        print ('Image is {}D with shape {} and label shape {}'.format(self._image_dim, self._image_shape, self._label_shape))
+        print ('Image is {}D with shape={}. Label with shape={}'.format(self._image_dim-1, self._image_shape, self._label_shape))
 
         if normalized:
             self._normalized_data()
