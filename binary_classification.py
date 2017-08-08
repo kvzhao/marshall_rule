@@ -49,7 +49,7 @@ class BinaryClassifier():
         self.total_loss = self.loss + self.regloss
 
         correct_prediction = tf.equal(tf.argmax(self.logits, 1), tf.argmax(self.y, 1))
-        self.accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
+        self.accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
         self.confusion_matrix = tf.contrib.metrics.confusion_matrix(labels=tf.argmax(self.y, 1), predictions=tf.argmax(self.logits, 1)) 
 
