@@ -9,7 +9,10 @@ Currently, we study several parameters and provide their visualization
 * Solver (SGD, ADAM)
 * Loss function (cross entropy, hinge loss)
 
+#### Network Behaviour
 ![Network Behaviour](samples/weights.png)
+
+#### Accuracy and Loss
 ![Accuracy and Loss](samples/accuracies.png)
 
 Two kind of datasets
