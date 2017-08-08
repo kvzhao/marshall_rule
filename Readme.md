@@ -13,6 +13,7 @@ Currently, we study several parameters and provide their visualization
 ![Network Behaviour](samples/weights.png)
 
 #### Weight Histogram and Distribution
+![Weight Histogram](samples/weighthist.png)
 ![Weight Distribution](samples/weightdist.png)
 
 #### Accuracy and Loss
