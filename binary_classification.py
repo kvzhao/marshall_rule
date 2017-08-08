@@ -33,11 +33,15 @@ class BinaryClassifier():
         self.net = simple_network(self.hidden_sizes, activation=self.activation)
         # building network
         self.logits = self.net(self.x)
+
+        self.regloss = 0.01 * tf.reduce_sum(tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES))
+
         # (TODO) add options
         if self.loss_func == 'xentropy':
             self.loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=self.logits, labels=self.y))
         elif self.loss_func == 'hinge':
             self.loss = tf.reduce_mean(tf.losses.hinge_loss(logits=self.logits, labels=self.y))
+        self.total_loss = self.loss + self.regloss
 
         correct_prediction = tf.equal(tf.argmax(self.logits, 1), tf.argmax(self.y, 1))
         self.accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
@@ -47,9 +51,9 @@ class BinaryClassifier():
         # Solver
         with tf.control_dependencies(tf.get_collection(tf.GraphKeys.UPDATE_OPS)):
             if self.solver_type == 'adam':
-                self.solver = tf.train.AdamOptimizer(learning_rate=self.learning_rate).minimize(self.loss, var_list=self.net.vars)
+                self.solver = tf.train.AdamOptimizer(learning_rate=self.learning_rate).minimize(self.total_loss, var_list=self.net.vars)
             elif self.solver_type == 'sgd':
-                self.solver = tf.train.GradientDescentOptimizer(learning_rate=self.learning_rate).minimize(self.loss, var_list=self.net.vars)
+                self.solver = tf.train.GradientDescentOptimizer(learning_rate=self.learning_rate).minimize(self.total_loss, var_list=self.net.vars)
         
         gpu_options = tf.GPUOptions(allow_growth=True)
         self.sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
@@ -63,7 +67,9 @@ class BinaryClassifier():
             tf.gfile.MakeDirs(self.ckptfile)
 
         with tf.name_scope('summaries'):
+            tloss_sum = tf.summary.scalar('total loss', self.total_loss)
             loss_sum = tf.summary.scalar(self.loss_func+'_loss', self.loss)
+            reg_sum = tf.summary.scalar('reg', self.regloss)
             acc_sum = tf.summary.scalar('accuracy', self.accuracy)
             self.summary_op = tf.summary.merge_all()
 
