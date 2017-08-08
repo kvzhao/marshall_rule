@@ -112,6 +112,9 @@ class BinaryClassifier():
                 self.writer.add_summary(summary, global_step=t)
                 print('Iter [%8d] Time [%5.4f] Validation Accuracy = %.4f' % (t, time.time() - start_time, acc))
                 print('Confusion : \n\t{} \n\t{}'.format(confmat[0], confmat[1]))
+                if (acc >= 0.995):
+                    print ('Validation Accuracy exceeds 99.5%, the task terminates.')
+                    break
 
     def overfit_test(self):
         """
