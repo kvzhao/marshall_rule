@@ -32,3 +32,7 @@ Show results
 ```
 tensorboard --logdir=logs
 ```
+
+### todo list
+* save ckpt 
+* prediction application
