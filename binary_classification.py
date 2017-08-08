@@ -4,7 +4,7 @@ from __future__ import print_function
 import numpy as np
 import time
 import tensorflow as tf
-from models import simple_network
+from models import simple_network, simple_rnn
 from constants import *
 
 class BinaryClassifier():
@@ -12,6 +12,7 @@ class BinaryClassifier():
                     task_name,
                     hidden_sizes,
                     solver_type = 'adam', 
+                    model = 'RNN',
                     activation = 'relu',
                     loss_func = 'softmax_cross_entropy',
                     learning_rate = 0.001):
@@ -19,6 +20,7 @@ class BinaryClassifier():
         self.num_train = self.data_sampler.num_train
 
         self.task_name = task_name
+        self.model = model
         self.solver_type = solver_type
         self.hidden_sizes = hidden_sizes
         self.activation = activation
@@ -30,7 +32,10 @@ class BinaryClassifier():
         self.y = tf.placeholder(tf.int32, [None, self.data_sampler.n_classes], name='y')
 
         # computation graph
-        self.net = simple_network(self.hidden_sizes, activation=self.activation)
+        if model == 'RNN':
+            self.net = simple_rnn(self.hidden_sizes)
+        elif model == 'NN':
+            self.net = simple_network(self.hidden_sizes, activation=self.activation)
         # building network
         self.logits = self.net(self.x)
 

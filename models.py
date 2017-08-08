@@ -1,5 +1,7 @@
+import sys
 import numpy as np
 import tensorflow as tf
+from tensorflow.contrib import rnn
 
 def variable_summaries(var, name):
     with tf.name_scope('summaries'):
@@ -17,6 +19,8 @@ def linear(x, size, name, initializer=None, bias_init=0):
     print ('linear layer with W_{}x{}, b_{}'.format(x.get_shape()[1], size, size))
     w = tf.get_variable(name + "/w", [x.get_shape()[1], size], initializer=initializer)
     b = tf.get_variable(name + "/b", [size], initializer=tf.constant_initializer(bias_init))
+    variable_summaries(w, name + '_w')
+    variable_summaries(b, name + '_b')
     return tf.matmul(x, w) + b
 
 def normalized_columns_initializer(std=1.0):
@@ -25,6 +29,28 @@ def normalized_columns_initializer(std=1.0):
         out *= std / np.sqrt(np.square(out).sum(axis=0, keepdims=True))
         return tf.constant(out)
     return _initializer
+
+class simple_rnn():
+    def __init__ (self, hidden_size):
+        self.name = 'rnn_network'
+        if len(hidden_size) is not 2:
+            sys.exit('RNN now only support single rnn layer!')
+        self.hidden_size = hidden_size
+    def build_network(self, x):
+        print ('Building RNN')
+        with tf.variable_scope(self.name):
+            lstm_cell = rnn.BasicLSTMCell(self.hidden_size[0], forget_bias=1.0)
+            outputs, states = rnn.static_rnn(lstm_cell, [x], dtype=tf.float32)
+            #variable_summaries(states, 'rnn_states')
+            #variable_summaries(lstm_cell, 'rnn_lstm')
+            linout = linear(outputs[-1], self.hidden_size[1], 
+                            'linout', normalized_columns_initializer(0.001), bias_init=0.01)
+            return linout
+    def __call__(self, x):
+        return self.build_network(x)
+    @property
+    def vars(self):
+        return [var for var in tf.global_variables() if self.name in var.name]
 
 class simple_network():
     def __init__ (self, hidden_sizes, activation='relu'):
@@ -37,18 +63,17 @@ class simple_network():
     
     def build_network(self, x):
         std = 0.0005
+        print ('Building NN')
         with tf.variable_scope(self.name):
             if self.activation == 'relu':
                 h = tf.nn.relu(linear(x, self.hidden_sizes[0], "input", normalized_columns_initializer(std), bias_init=0.01))
             elif self.activation == 'none':
                 h = linear(x, self.hidden_sizes[0], "input", normalized_columns_initializer(std), bias_init=0.01)
-            variable_summaries(h, "input")
             for i, size in enumerate(self.hidden_sizes[1:]):
                 if self.activation == 'relu':
                     h = tf.nn.relu(linear(h, size, "hidden{}".format(i+1), normalized_columns_initializer(std), bias_init=0.01))
                 elif self.activation == 'none':
                     h = linear(h, size, "hidden{}".format(i+1), normalized_columns_initializer(std), bias_init=0.01)
-                variable_summaries(h, "hidden{}".format(i+1))
         return h
 
     def __call__ (self, x):

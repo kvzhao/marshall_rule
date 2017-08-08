@@ -1,7 +1,10 @@
 
-DATA_PATH = "datasetCoeffs/train.txt"
-LABEL_PATH = "datasetCoeffs/label.txt"
+# data information
+DATA_PATH = "datasetConfig/states.txt"
+LABEL_PATH = "datasetConfig/sign.txt"
 DATA_NORMALIZED = False
+
+MODEL = 'RNN'
 
 # ~ 2000 steps per epoch
 NUM_EPOCH = 2000
