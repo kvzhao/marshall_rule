@@ -94,6 +94,7 @@ class BinaryClassifier():
         ## init the weights
         self.sess.run(tf.global_variables_initializer())
         start_time = time.time()
+        stable_counter = 0
 
         STEPS_PER_EPOCH = int (self.num_train/BATCH_SIZE)
         for t in range(0, NUM_EPOCH * STEPS_PER_EPOCH):
@@ -113,8 +114,10 @@ class BinaryClassifier():
                 print('Iter [%8d] Time [%5.4f] Validation Accuracy = %.4f' % (t, time.time() - start_time, acc))
                 print('Confusion : \n\t{} \n\t{}'.format(confmat[0], confmat[1]))
                 if (acc >= 0.995):
-                    print ('Validation Accuracy exceeds 99.5%, the task terminates.')
-                    break
+                    stable_counter += 1
+                    if (stable_counter >= 10000):
+                        print ('Validation Accuracy exceeds 99.5%, the task terminates.')
+                        break
 
     def overfit_test(self):
         """
