@@ -41,8 +41,6 @@ class simple_rnn():
         with tf.variable_scope(self.name):
             lstm_cell = rnn.BasicLSTMCell(self.hidden_size[0], forget_bias=1.0)
             outputs, states = rnn.static_rnn(lstm_cell, [x], dtype=tf.float32)
-            #variable_summaries(states, 'rnn_states')
-            #variable_summaries(lstm_cell, 'rnn_lstm')
             linout = linear(outputs[-1], self.hidden_size[1], 
                             'linout', normalized_columns_initializer(0.001), bias_init=0.01)
             return linout
