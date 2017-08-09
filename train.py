@@ -17,6 +17,11 @@ HIDDEN_SIZES = [[8, 2],
                 [128, 2],
                 [256, 2]]
 
+LOSS_FUNCS = ['xentropy']
+SOLVERS = ['adam']
+LEARNING_RATES = [0.001]
+HIDDEN_SIZES = [[8, 2]]
+
 def main():
     for solver in SOLVERS:
         for loss_type in LOSS_FUNCS:
@@ -25,7 +30,7 @@ def main():
                 hidden_sizes = h
                 for lr in LEARNING_RATES:
                     ds = DataSampler()
-                    arch = MODEL + '_arch' + 'x'.join([str(i) for i in hidden_sizes]) + 'lr={}'.format(lr)
+                    arch = MODEL + '_' + 'x'.join([str(i) for i in hidden_sizes]) + 'x{}'.format(lr)
                     task = '_'.join([arch, loss_type, solver])
                     print ('[TRAIN] Start experiment: {}'.format(task))
                     classifier = BinaryClassifier(data_sampler=ds,
