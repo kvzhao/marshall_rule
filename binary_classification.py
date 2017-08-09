@@ -100,11 +100,12 @@ class BinaryClassifier():
         for t in range(0, NUM_EPOCH * STEPS_PER_EPOCH):
             batch_x, batch_y = self.data_sampler(BATCH_SIZE, is_train=True)
             _, cost = self.sess.run([self.solver, self.loss], feed_dict={self.y: batch_y, self.x: batch_x})
-
             if t % EVAL_PER_STEPS == 0:
                 loss = self.sess.run([self.loss], feed_dict={self.y: batch_y, self.x: batch_x})
                 print('Iter [%8d] Time [%5.4f] Training Loss = %.4f ' % (t, time.time() - start_time, loss[0]))
-
+            if t % SAVE_CKPT_PER_STEPS == 0:
+                print ('Save to checkpoint')
+                self.saver.save(self.sess, self.ckptfile + '/model', global_step=t)
             # evaluation per epoch
             if t % STEPS_PER_EPOCH == 0:
                 test_batch_x, test_batch_y = self.data_sampler(TEST_BATCH_SIZE, is_train=False)
