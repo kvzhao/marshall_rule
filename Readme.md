@@ -18,6 +18,8 @@ There are following options
 * NUM_EPOCH
 * BATCH_SIZE
 
+note: emprically, datasetConfig takes 20k iteration to converge, and J1J2 takes about 10k.
+
 For testing
 ```
 python main.py --is_train=False
@@ -26,3 +28,4 @@ python main.py --is_train=False
 ### todo
 * ipython notebook for testing visualization 
 * trained model
+* dynamic rnn
