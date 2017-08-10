@@ -9,7 +9,6 @@ import tensorflow.contrib.rnn as rnn
 from data_sampler import DataSampler
 from rnn_model import RNN
 
-task_name = 'trial'
 
 print ('Version of tensorflow is {}'.format(tf.__version__))
 
