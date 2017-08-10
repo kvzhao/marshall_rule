@@ -23,7 +23,7 @@ for example
 python main.py --is_train=True --DATA_PATH=datasetConfig/states.txt --LABEL_PATH=datasetConfig/sign.txt --task_name=demo --SAVE_CKPT_PER_STEPS=100000
 ```
 
-note: emprically, datasetConfig takes 200k iteration to converge, and J1J2 takes about 100k.
+note: emprically, datasetConfig takes 200k iterations to converge, and J1J2 takes about 100k.
 
 After
 ```
