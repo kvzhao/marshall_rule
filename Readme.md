@@ -3,41 +3,26 @@
 ### intro
 We study, in this project, how neural networks capturing known phyiscal rules.
 
-Currently, we study several parameters and provide their visualization
-* Hidden layer size
-* Learning rate
-* Solver (SGD, ADAM)
-* Loss function (cross entropy, hinge loss)
-
-#### Accuracy and Loss
-![Accuracy and Loss](samples/accuracies.png)
-
-#### Weight Histogram and Distribution
-![Weight Histogram](samples/weighthist.png)
-![Weight Distribution](samples/weightdist.png)
-
-#### Network Behaviour
-![Network Behaviour](samples/weights.png)
-
-Two kind of datasets
-* Configurations
-    * sign label
-    * even/ odd label
-* Coefficients
-
 ### usage
 
-Run 
+Run training 
 ```
-python train.py
-```
-
-Show results
-```
-tensorboard --logdir=logs
+python main.py --is_train=True 
 ```
 
-### todo list
-* save ckpt 
-* prediction application
-* quantitaive analysis?
+There are following options
+* is_train
+* task_name
+* DATA_PATH
+* LABEL_PATH
+* NUM_EPOCH
+* BATCH_SIZE
+
+For testing
+```
+python main.py --is_train=False
+```
+
+### todo
+* ipython notebook for testing visualization 
+* trained model
