@@ -5,9 +5,9 @@ We study, in this project, how neural networks capturing known phyiscal rules.
 
 ### usage
 
-Run training 
+Run training (by default)
 ```
-python main.py --is_train=True 
+python main.py 
 ```
 
 There are following options
@@ -18,9 +18,14 @@ There are following options
 * NUM_EPOCH
 * BATCH_SIZE
 
-note: emprically, datasetConfig takes 20k iteration to converge, and J1J2 takes about 10k.
+for example
+```
+python main.py --is_train=True --DATA_PATH=datasetConfig/states.txt --LABEL_PATH=datasetConfig/sign.txt --task_name=demo --SAVE_CKPT_PER_STEPS=100000
+```
 
-For testing
+note: emprically, datasetConfig takes 200k iteration to converge, and J1J2 takes about 100k.
+
+After
 ```
 python main.py --is_train=False
 ```
