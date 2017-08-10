@@ -10,7 +10,7 @@ FLAGS = tf.flags.FLAGS
 LOSS_FUNCS = ['xentropy', 'hinge']
 SOLVERS = ['adam', 'sgd']
 LEARNING_RATES = [0.001, 0.005, 0.01, 0.05]
-HIDDEN_SIZES = [[8, 2], 
+HIDDEN_SIZES = [[8, 2],
                 [16, 2],
                 [32, 2],
                 [64, 2],
@@ -36,7 +36,7 @@ def main():
                     classifier = BinaryClassifier(data_sampler=ds,
                                                 task_name = task,
                                                 hidden_sizes=hidden_sizes,
-                                                model = MODEL, 
+                                                model = MODEL,
                                                 solver_type=solver,
                                                 activation='relu',
                                                 loss_func=loss_type,

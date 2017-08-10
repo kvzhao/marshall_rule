@@ -36,16 +36,18 @@ class simple_rnn():
         if len(hidden_size) is not 2:
             sys.exit('RNN now only support single rnn layer!')
         self.hidden_size = hidden_size
-    def build_network(self, x):
+    def build_network(self, x, reuse):
         print ('Building RNN')
-        with tf.variable_scope(self.name):
-            lstm_cell = rnn.BasicLSTMCell(self.hidden_size[0], forget_bias=1.0)
+        with tf.variable_scope(self.name, reuse=reuse):
+            lstm_cell = rnn.BasicLSTMCell(self.hidden_size[0], forget_bias=1.0, 
+                        state_is_tuple=True, reuse=tf.get_variable_scope().reuse)
+            print ('shape of input {}'.format(x.shape))
             outputs, states = rnn.static_rnn(lstm_cell, [x], dtype=tf.float32)
             linout = linear(outputs[-1], self.hidden_size[1], 
                             'linout', normalized_columns_initializer(0.001), bias_init=0.01)
             return linout
-    def __call__(self, x):
-        return self.build_network(x)
+    def __call__(self, x, reuse=False):
+        return self.build_network(x, reuse)
     @property
     def vars(self):
         return [var for var in tf.global_variables() if self.name in var.name]
