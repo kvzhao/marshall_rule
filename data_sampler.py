@@ -3,12 +3,11 @@ import os, sys
 import collections
 
 from random import shuffle
-from constants import DATA_PATH, LABEL_PATH, DATA_NORMALIZED
 
-def read_data_sets(normalized=True):
+def read_data_sets(data_path, label_path, normalized=True):
     ## read data, hard-coded
-    images = np.loadtxt(DATA_PATH)
-    labels = np.loadtxt(LABEL_PATH)
+    images = np.loadtxt(data_path)
+    labels = np.loadtxt(label_path)
     num_data = images.shape[0]
     ## 80% for training and 20% data for testing
     train_num = int(.8 * num_data)
@@ -26,9 +25,9 @@ def read_data_sets(normalized=True):
     return trainset, testset
 
 class DataSampler(object):
-    def __init__ (self):
+    def __init__ (self, DATA_PATH, LABEL_PATH, DATA_NORMALIZED=False):
         #TODO: dont use hard-coded
-        self.train_set, self.test_set = read_data_sets(normalized=DATA_NORMALIZED)
+        self.train_set, self.test_set = read_data_sets(DATA_PATH, LABEL_PATH, normalized=DATA_NORMALIZED)
         self.num_train = self.train_set._num_of_samples
         self.num_test  = self.test_set._num_of_samples
         self.x_dim = self.train_set._image_shape[0]
