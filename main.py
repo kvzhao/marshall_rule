@@ -14,9 +14,10 @@ print ('Version of tensorflow is {}'.format(tf.__version__))
 
 # management
 tf.app.flags.DEFINE_bool("is_train", True, "Set true for training, false flag will launch testing and analysis")
-tf.app.flags.DEFINE_string("task_name", "trial", "Assign objective of task")
-tf.app.flags.DEFINE_string("DATA_PATH", "datasetConfig/states.txt", "Set path of states file")
-tf.app.flags.DEFINE_string("LABEL_PATH", "datasetConfig/sign.txt", "Path to file of sign")
+tf.app.flags.DEFINE_string("task_name", "mytask", "Assign objective of task")
+tf.app.flags.DEFINE_string("DATA_PATH", "datasetSignStateConfig/states_j2j1.txt", "Set path of states file")
+tf.app.flags.DEFINE_string("LABEL_PATH", "datasetSignStateConfig/sign_j2j1.txt", "Path to file of sign")
+tf.app.flags.DEFINE_float("TRAINSET_RATIO", 0.8, "Assign ration of training set and reset for testing")
 
 #TODO: Add reset option
 
@@ -47,7 +48,7 @@ def get_weights_by_name (sess, name):
 """
 
 with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
-    data_sampler = DataSampler(FLAGS.DATA_PATH, FLAGS.LABEL_PATH)
+    data_sampler = DataSampler(FLAGS.DATA_PATH, FLAGS.LABEL_PATH, FLAGS.TRAINSET_RATIO)
     num_train_data = data_sampler.num_train
     num_test_data  = data_sampler.num_test
 
@@ -57,10 +58,13 @@ with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
 
     logfile = '/'.join(['logs', task_name])
     ckptfile = '/'.join(['checkpoints', task_name])
+    outfile = '/'.join(['lstmw_'+task_name])
     if not tf.gfile.Exists(logfile):
         tf.gfile.MakeDirs(logfile)
     if not tf.gfile.Exists(ckptfile):
         tf.gfile.MakeDirs(ckptfile)
+    if not FLAGS.is_train and not tf.gfile.Exists(outfile):
+        tf.gfile.MakeDirs(outfile)
 
     if FLAGS.is_train:
         print ('Training')
@@ -202,3 +206,14 @@ with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
         print (bo.shape)
         print (linout_w.shape)
         print (linout_b.shape)
+
+        np.save(outfile + '/Wi', Wi)
+        np.save(outfile + '/Wc', Wc)
+        np.save(outfile + '/Wf', Wf)
+        np.save(outfile + '/Wo', Wo)
+        np.save(outfile + '/bi', bi)
+        np.save(outfile + '/bc', bc)
+        np.save(outfile + '/bf', bf)
+        np.save(outfile + '/bo', bo)
+        np.save(outfile + '/linout_w', linout_w)
+        np.save(outfile + '/linout_b', linout_b)
