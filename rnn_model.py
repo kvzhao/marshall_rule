@@ -1,5 +1,6 @@
 import tensorflow as tf
 import tensorflow.contrib.rnn as rnn
+import tensorflow.contrib.layers as layers
 
 def variable_summaries(var, name):
     with tf.name_scope('summaries'):
@@ -32,8 +33,12 @@ class RNN(object):
                                         reuse=tf.get_variable_scope().reuse)
             outputs, states = rnn.static_rnn(lstm_cell, [self.x], dtype=tf.float32)
             outshape = outputs[-1].get_shape()
-            w = tf.get_variable("w", [outshape[1], self.out_size], initializer=tf.random_normal_initializer())
-            b = tf.get_variable("b", [self.out_size], initializer=tf.constant_initializer(0.001))
+            w = tf.get_variable("w", [outshape[1], self.out_size], 
+                                initializer=tf.random_normal_initializer(),
+                                regularizer=layers.l2_regularizer(10.0))
+            b = tf.get_variable("b", [self.out_size], 
+                                initializer=tf.constant_initializer(0.001),
+                                regularizer=layers.l2_regularizer(10.0))
             linout = tf.matmul(outputs[-1], w) + b
             if (self.write_summary):
                 variable_summaries(w, self.name + '_w')
