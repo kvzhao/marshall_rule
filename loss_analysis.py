@@ -137,7 +137,6 @@ with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
     plt.xlabel('J2/J1')
     plt.ylabel('Accuracy')
     #plt.ylabel('xentropy loss')
-    plt.title('Train on J = [0.1, 0.5]')
     plt.savefig(FLAGS.output_name + '/loss_spectrum.png')
     plt.show()
 
