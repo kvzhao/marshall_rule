@@ -23,7 +23,7 @@ tf.app.flags.DEFINE_string("DATA_PATH", "datasetSignStateConfig/states_j2j1.txt"
 tf.app.flags.DEFINE_string("LABEL_PATH", "datasetSignStateConfig/sign_j2j1.txt", "Path to file of sign")
 tf.app.flags.DEFINE_float("TRAINSET_RATIO", 0.0, "Assign ration of training set and reset for testing")
 
-#TODO: Add reset option
+#TODO: Cellsize should refer to model_name
 tf.app.flags.DEFINE_integer("cell_size", 8, "Size of lstm cells")
 tf.app.flags.DEFINE_integer("num_output", 2, "Number of classes")
 
@@ -107,7 +107,7 @@ with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
     np.save(FLAGS.output_name+ '/c_states', states[1])
     np.save(FLAGS.output_name+ '/losses', losses)
     np.save(FLAGS.output_name+ '/probs', probs)
-    np.save(FLAGS.output_name+ '/accuracy', acc)
+    np.save(FLAGS.output_name+ '/accuracy', cpred)
     np.save(FLAGS.output_name+ '/j2j1', js)
     np.save(FLAGS.output_name+ '/x', test_batch_x)
     np.save(FLAGS.output_name+ '/y', test_batch_y)
