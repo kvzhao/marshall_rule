@@ -15,15 +15,15 @@ print ('Version of tensorflow is {}'.format(tf.__version__))
 # management
 tf.app.flags.DEFINE_bool("is_train", True, "Set true for training, false flag will launch testing and analysis")
 tf.app.flags.DEFINE_string("task_name", "mytask", "Assign objective of task")
-tf.app.flags.DEFINE_string("DATA_PATH", "datasetSignStateConfig/states_j2j1.txt", "Set path of states file")
-tf.app.flags.DEFINE_string("LABEL_PATH", "datasetSignStateConfig/sign_j2j1.txt", "Path to file of sign")
+tf.app.flags.DEFINE_string("DATA_PATH", "datasetMerged/states_J0.txt", "Set path of states file")
+tf.app.flags.DEFINE_string("LABEL_PATH", "datasetMerged/sign_J0.txt", "Path to file of sign")
 tf.app.flags.DEFINE_float("TRAINSET_RATIO", 0.8, "Assign ration of training set and reset for testing")
 
 #TODO: Add reset option
 
 # hyper-params
 tf.app.flags.DEFINE_float("learning_rate", 0.001, "Learning rate.")
-tf.app.flags.DEFINE_integer("cell_size", 8, "Size of lstm cells")
+tf.app.flags.DEFINE_integer("cell_size", 16, "Size of lstm cells")
 tf.app.flags.DEFINE_integer("num_output", 2, "Number of classes")
 
 # traning process
@@ -189,7 +189,7 @@ with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
         """
             Meaning of subscript
             i: information gate
-            c: memory gate
+            c: memory gate (tranform layer)
             f: forget gate
             o: output gate
         """

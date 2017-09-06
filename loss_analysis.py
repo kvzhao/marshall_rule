@@ -18,9 +18,9 @@ print ('Version of tensorflow is {}'.format(tf.__version__))
 # management
 tf.app.flags.DEFINE_bool("is_train", False, "Set true for training, false flag will launch testing and analysis")
 tf.app.flags.DEFINE_string("output_name", "results", "Assign objective of task")
-tf.app.flags.DEFINE_string("model_name", "j2j1wo05_8x2x0.001", "Directly load the trained model by name")
-tf.app.flags.DEFINE_string("DATA_PATH", "datasetSignStateConfig/states_j2j1.txt", "Set path of states file")
-tf.app.flags.DEFINE_string("LABEL_PATH", "datasetSignStateConfig/sign_j2j1.txt", "Path to file of sign")
+tf.app.flags.DEFINE_string("model_name", "mytask_8x2x0.001", "Directly load the trained model by name")
+tf.app.flags.DEFINE_string("DATA_PATH", "datasetMerged/states_j2j1.txt", "Set path of states file")
+tf.app.flags.DEFINE_string("LABEL_PATH", "datasetMerged/sign_j2j1.txt", "Path to file of sign")
 tf.app.flags.DEFINE_float("TRAINSET_RATIO", 0.0, "Assign ration of training set and reset for testing")
 
 #TODO: Cellsize should refer to model_name
@@ -126,6 +126,7 @@ with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
     for i, j in enumerate(jset):
         means.append(np.mean(group_losses[i]))
         stddevs.append(np.std(group_losses[i]))
+
     # saving group losses
     np.save(FLAGS.output_name+ '/jest', jset)
     np.save(FLAGS.output_name+ '/means', means)
@@ -136,6 +137,7 @@ with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
     plt.xlabel('J2/J1')
     plt.ylabel('Accuracy')
     #plt.ylabel('xentropy loss')
+    plt.title('Train on J = [0.1, 0.5]')
     plt.savefig(FLAGS.output_name + '/loss_spectrum.png')
     plt.show()
 
