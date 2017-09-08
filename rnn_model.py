@@ -55,10 +55,10 @@ class RNN(object):
 
             w = tf.get_variable("w", [outshape[-1], self.num_classes], 
                                 initializer=tf.random_normal_initializer(),
-                                regularizer=layers.l2_regularizer(10.0))
+                                regularizer=layers.l2_regularizer(1.0))
             b = tf.get_variable("b", [self.num_classes], 
                                 initializer=tf.constant_initializer(0.001),
-                                regularizer=layers.l2_regularizer(10.0))
+                                regularizer=layers.l2_regularizer(1.0))
             linout = tf.matmul(outputs[-1], w) + b
             if (self.write_summary):
                 variable_summaries(w, self.name + '_w')
