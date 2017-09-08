@@ -3,8 +3,8 @@ import numpy as np
 import argparse
 
 parser = argparse.ArgumentParser(description='Merge J2/J1 and Configurations. Generate Data & Labels')
-parser.add_argument('--Jupper', dest='Jupper', default=0.0, type=int, help='Upper bound of J2/J1 value')
-parser.add_argument('--Jlower', dest='Jlower', default=0.0, type=int, help='Lower bound of J2/J1 value')
+parser.add_argument('--Jupper', dest='Jupper', default=0.0, type=float, help='Upper bound of J2/J1 value')
+parser.add_argument('--Jlower', dest='Jlower', default=0.0, type=float, help='Lower bound of J2/J1 value')
 parser.add_argument('--out', dest='out_postfix', default='J0', type=str, help='Postfix of output filename')
 
 FLAGS = parser.parse_args()
