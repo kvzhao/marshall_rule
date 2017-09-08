@@ -24,7 +24,7 @@ tf.app.flags.DEFINE_float("TRAINSET_RATIO", 0.8, "Assign ration of training set 
 # hyper-params
 tf.app.flags.DEFINE_float("learning_rate", 0.001, "Learning rate.")
 tf.app.flags.DEFINE_integer("cell_size", 16, "Size of lstm cells")
-tf.app.flags.DEFINE_integer("num_output", 2, "Number of classes")
+tf.app.flags.DEFINE_integer("num_classes", 2, "Number of classes")
 
 # traning process
 tf.app.flags.DEFINE_integer("NUM_EPOCH", 200, "Number of epochs")
@@ -53,7 +53,7 @@ with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
     num_test_data  = data_sampler.num_test
 
     task_name = FLAGS.task_name + '_' + 'x'.join([str(FLAGS.cell_size),
-                                                    str(FLAGS.num_output),
+                                                    str(FLAGS.num_classes),
                                                     str(FLAGS.learning_rate)])
 
     logfile = '/'.join(['logs', task_name])
@@ -67,12 +67,13 @@ with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
         tf.gfile.MakeDirs(outfile)
 
     if FLAGS.is_train:
-        print ('Training')
+        print ('Training ...')
         
-        x = tf.placeholder(tf.float32, [None, data_sampler.x_dim] , name='x')
+        # Batch size x time steps x features.
+        x = tf.placeholder(tf.float32, [None, data_sampler.x_dim, 1] , name='x')
         y = tf.placeholder(tf.int32, [None, data_sampler.n_classes], name='y')
 
-        net = RNN(x, cell_size=FLAGS.cell_size, out_size=FLAGS.num_output)
+        net = RNN(x, cell_size=FLAGS.cell_size, num_classes=FLAGS.num_classes)
         logits, _ = net()
 
         # loss function
@@ -140,7 +141,7 @@ with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
         y = tf.placeholder(tf.int32, [None, data_sampler.n_classes], name='y')
 
         # allocate empty network
-        net = RNN(x, cell_size=FLAGS.cell_size, out_size=FLAGS.num_output)
+        net = RNN(x, cell_size=FLAGS.cell_size, num_classes=FLAGS.num_classes)
         # connect operators
         logits, cell_states = net()
         prob_op = tf.nn.softmax (logits)
