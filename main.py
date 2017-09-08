@@ -73,7 +73,7 @@ with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
         print ('Training ...')
         
         # Batch size x time steps x features.
-        x = tf.placeholder(tf.float32, [None, 1, data_sampler.x_dim] , name='x')
+        x = tf.placeholder(tf.float32, [None, data_sampler.x_dim, 1] , name='x')
         y = tf.placeholder(tf.int32, [None, data_sampler.n_classes], name='y')
 
         net = RNN(x, cell_size=FLAGS.cell_size,
@@ -144,7 +144,7 @@ with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
     else: # is_train=false
         print ('Testing')
 
-        x = tf.placeholder(tf.float32, [None, 1, data_sampler.x_dim] , name='x')
+        x = tf.placeholder(tf.float32, [None, data_sampler.x_dim, 1] , name='x')
         y = tf.placeholder(tf.int32, [None, data_sampler.n_classes], name='y')
 
         # allocate empty network
