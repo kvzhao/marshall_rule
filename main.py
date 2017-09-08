@@ -24,6 +24,7 @@ tf.app.flags.DEFINE_float("TRAINSET_RATIO", 0.8, "Assign ration of training set 
 # hyper-params
 tf.app.flags.DEFINE_float("learning_rate", 0.001, "Learning rate.")
 tf.app.flags.DEFINE_integer("cell_size", 16, "Size of lstm cells")
+tf.app.flags.DEFINE_integer("num_layers", 1, "Number of LSTM Layers")
 tf.app.flags.DEFINE_integer("num_classes", 2, "Number of classes")
 
 # traning process
@@ -52,13 +53,15 @@ with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
     num_train_data = data_sampler.num_train
     num_test_data  = data_sampler.num_test
 
-    task_name = FLAGS.task_name + '_' + 'x'.join([str(FLAGS.cell_size),
-                                                    str(FLAGS.num_classes),
-                                                    str(FLAGS.learning_rate)])
+    task_name = FLAGS.task_name + '_' + 'x'.join([str(FLAGS.num_layers),
+                                                str(FLAGS.cell_size),
+                                                str(FLAGS.num_classes),
+                                                str(FLAGS.learning_rate)])
 
     logfile = '/'.join(['logs', task_name])
     ckptfile = '/'.join(['checkpoints', task_name])
     outfile = '/'.join(['lstmw_'+task_name])
+
     if not tf.gfile.Exists(logfile):
         tf.gfile.MakeDirs(logfile)
     if not tf.gfile.Exists(ckptfile):
@@ -73,7 +76,11 @@ with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
         x = tf.placeholder(tf.float32, [None, data_sampler.x_dim, 1] , name='x')
         y = tf.placeholder(tf.int32, [None, data_sampler.n_classes], name='y')
 
-        net = RNN(x, cell_size=FLAGS.cell_size, num_classes=FLAGS.num_classes)
+        net = RNN(x, cell_size=FLAGS.cell_size,
+                    num_classes=FLAGS.num_classes,
+                    num_layers=FLAGS.num_layers
+                    )
+
         logits, _ = net()
 
         # loss function
@@ -141,7 +148,10 @@ with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
         y = tf.placeholder(tf.int32, [None, data_sampler.n_classes], name='y')
 
         # allocate empty network
-        net = RNN(x, cell_size=FLAGS.cell_size, num_classes=FLAGS.num_classes)
+        net = RNN(x, cell_size=FLAGS.cell_size,
+                    num_classes=FLAGS.num_classes,
+                    num_layers=FLAGS.num_layers
+                    )
         # connect operators
         logits, cell_states = net()
         prob_op = tf.nn.softmax (logits)

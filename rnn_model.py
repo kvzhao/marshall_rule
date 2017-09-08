@@ -15,10 +15,14 @@ def variable_summaries(var, name):
     tf.summary.histogram(name+'_histogram', var)
 
 class RNN(object):
-    def __init__ (self, x, cell_size, out_size, write_summary=True, name='rnn_net', reuse=False):
+    def __init__ (self, x, cell_size, 
+                    num_layers, num_classes, 
+                    write_summary=True, 
+                    name='rnn_net', reuse=False):
         self.name = name
         self.cell_size = cell_size
-        self.out_size = out_size
+        self.num_classes = num_classes
+        self.num_layers = num_layers
         self.x = x
         self.reuse = reuse
         self.write_summary = write_summary
@@ -29,14 +33,30 @@ class RNN(object):
         with tf.variable_scope(self.name, reuse=self.reuse):
             print ('Building RNN network')
 
-            lstm_cell = rnn.BasicLSTMCell(self.cell_size, forget_bias=1.0, 
-                                        reuse=tf.get_variable_scope().reuse)
-            outputs, states = rnn.static_rnn(lstm_cell, [self.x], dtype=tf.float32)
+            if self.num_layers == 1:
+                lstm_cell = rnn.BasicLSTMCell(self.cell_size, forget_bias=1.0, 
+                                            reuse=tf.get_variable_scope().reuse)
+            else:
+                lstm_cell = []
+                for _ in range(self.num_layers):
+                    cell = rnn.BasicLSTMCell(self.cell_size, forget_bias=1.0, 
+                                            reuse=tf.get_variable_scope().reuse)
+                    lstm_cell.append(cell)
+                lstm_cell = rnn.MultiRNNCell(lstm_cell)
+
+            outputs, states = tf.nn.dynamic_rnn(lstm_cell, 
+                                self.x,
+                                dtype=tf.float32)
+            
+            # transpose to time-major, then get time dim
+            outputs = tf.transpose(outputs, [1, 0, 2])
             outshape = outputs[-1].get_shape()
-            w = tf.get_variable("w", [outshape[1], self.out_size], 
+            print ('outshape = outputs[-1] = {}, this number should be connected to projection layer'.format(outshape))
+
+            w = tf.get_variable("w", [outshape[-1], self.num_classes], 
                                 initializer=tf.random_normal_initializer(),
                                 regularizer=layers.l2_regularizer(10.0))
-            b = tf.get_variable("b", [self.out_size], 
+            b = tf.get_variable("b", [self.num_classes], 
                                 initializer=tf.constant_initializer(0.001),
                                 regularizer=layers.l2_regularizer(10.0))
             linout = tf.matmul(outputs[-1], w) + b

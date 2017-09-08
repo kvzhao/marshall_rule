@@ -43,7 +43,7 @@ class DataSampler(object):
 
 class DataSet(object):
     def __init__(self, images, labels, dtpye=np.float32, normalized=True):
-        self._images = images
+        self._images = np.expand_dims(images, axis=2)
         self._labels = labels
         self._num_of_samples = images.shape[0]
         self._image_dim = len(images.shape)
@@ -51,6 +51,7 @@ class DataSet(object):
         self._label_shape = labels.shape[1:]
         self._epochs_completed = 0
         self._index_in_epoch = 0
+        print ('_images shape {}'.format(self._images.shape))
         print ('Image is {}D with shape={}. Label with shape={}'.format(self._image_dim-1, self._image_shape, self._label_shape))
 
         if normalized:
