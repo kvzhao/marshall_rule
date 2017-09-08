@@ -43,7 +43,7 @@ class DataSampler(object):
 
 class DataSet(object):
     def __init__(self, images, labels, dtpye=np.float32, normalized=True):
-        self._images = np.expand_dims(images, axis=2)
+        self._images = np.expand_dims(images, axis=1)
         self._labels = labels
         self._num_of_samples = images.shape[0]
         self._image_dim = len(images.shape)
