@@ -3,6 +3,8 @@
 ### intro
 We study, in this project, how neural networks capturing known phyiscal rules.
 
+![NonMarshall](figures/non-marshall-states.png)
+
 ### usage
 
 Run training (by default)
