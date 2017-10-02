@@ -25,7 +25,8 @@ tf.app.flags.DEFINE_float("TRAINSET_RATIO", 0.0, "Assign ration of training set 
 
 #TODO: Cellsize should refer to model_name
 tf.app.flags.DEFINE_integer("cell_size", 8, "Size of lstm cells")
-tf.app.flags.DEFINE_integer("num_output", 2, "Number of classes")
+tf.app.flags.DEFINE_integer("num_layers", 1, "Number of LSTM Layers")
+tf.app.flags.DEFINE_integer("num_classes", 2, "Number of classes")
 
 FLAGS = tf.app.flags.FLAGS
 
@@ -60,7 +61,7 @@ with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
     y = tf.placeholder(tf.float32, [None, data_sampler.n_classes], name='y')
 
     # allocate empty network
-    net = RNN(x, cell_size=FLAGS.cell_size, out_size=FLAGS.num_output)
+    net = RNN(x, cell_size=FLAGS.cell_size, num_layers=FLAGS.num_layers, num_classes=FLAGS.num_classes)
     # connect operators
     logits, cell_states = net()
     print(logits.shape)

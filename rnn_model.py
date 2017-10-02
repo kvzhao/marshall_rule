@@ -15,16 +15,21 @@ def variable_summaries(var, name):
     tf.summary.histogram(name+'_histogram', var)
 
 class RNN(object):
-    def __init__ (self, x, cell_size, 
-                    num_layers, num_classes, 
+    def __init__ (self, x, x_len, cell_size, 
+                    num_layers, num_classes,
                     write_summary=True, 
-                    name='rnn_net', reuse=False):
+                    name='rnn_net',
+                    use_cos=True,
+                    reuse=False):
         self.name = name
         self.cell_size = cell_size
         self.num_classes = num_classes
         self.num_layers = num_layers
         self.x = x
+        self.x_dim = x.shape[-1]
+        self.x_len = x_len
         self.reuse = reuse
+        self.use_cos = use_cos
         self.write_summary = write_summary
 
         self._build()
@@ -32,6 +37,16 @@ class RNN(object):
     def _build(self):
         with tf.variable_scope(self.name, reuse=self.reuse):
             print ('Building RNN network')
+
+            if self.use_cos:
+                # Resize and so on
+                self.x = tf.squeeze(self.x)
+                cos_w = tf.get_variable("cos_weight", shape=[self.x_dim, self.cell_size], dtype=tf.float32)
+                cos_b = tf.get_variable("cos_bias", shape=[self.cell_size], dtype=tf.float32)
+                x = tf.cos( tf.add(tf.matmul(self.x, cos_w), cos_b))
+                x = tf.expand_dims(x, axis=1)
+            else:
+                x = self.x
 
             if self.num_layers == 1:
                 lstm_cell = rnn.BasicLSTMCell(self.cell_size, forget_bias=1.0, 
@@ -45,8 +60,10 @@ class RNN(object):
                 lstm_cell = rnn.MultiRNNCell(lstm_cell)
 
             outputs, states = tf.nn.dynamic_rnn(lstm_cell, 
-                                self.x,
-                                dtype=tf.float32)
+                                inputs=x,
+                                sequence_length=self.x_len,
+                                dtype=tf.float32,
+                                time_major=False)
             
             # transpose to time-major, then get time dim
             outputs = tf.transpose(outputs, [1, 0, 2])

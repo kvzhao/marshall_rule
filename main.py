@@ -17,7 +17,8 @@ tf.app.flags.DEFINE_bool("is_train", True, "Set true for training, false flag wi
 tf.app.flags.DEFINE_string("task_name", "mytask", "Assign objective of task")
 tf.app.flags.DEFINE_string("DATA_PATH", "datasetMerged/states_J0.txt", "Set path of states file")
 tf.app.flags.DEFINE_string("LABEL_PATH", "datasetMerged/sign_J0.txt", "Path to file of sign")
-tf.app.flags.DEFINE_float("TRAINSET_RATIO", 0.8, "Assign ration of training set and reset for testing")
+tf.app.flags.DEFINE_float("TRAINSET_RATIO", 0.6, "Assign ration of training set and reset for testing")
+tf.app.flags.DEFINE_bool("single_time_step", False, "Set Ture when the sequence is feeded element by element")
 
 #TODO: Add reset option
 
@@ -26,6 +27,7 @@ tf.app.flags.DEFINE_float("learning_rate", 0.001, "Learning rate.")
 tf.app.flags.DEFINE_integer("cell_size", 16, "Size of lstm cells")
 tf.app.flags.DEFINE_integer("num_layers", 1, "Number of LSTM Layers")
 tf.app.flags.DEFINE_integer("num_classes", 2, "Number of classes")
+tf.app.flags.DEFINE_bool("use_cos", True, "Option to use Cos for first layer activation function")
 
 # traning process
 tf.app.flags.DEFINE_integer("NUM_EPOCH", 200, "Number of epochs")
@@ -49,7 +51,7 @@ def get_weights_by_name (sess, name):
 """
 
 with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
-    data_sampler = DataSampler(FLAGS.DATA_PATH, FLAGS.LABEL_PATH, FLAGS.TRAINSET_RATIO)
+    data_sampler = DataSampler(FLAGS.DATA_PATH, FLAGS.LABEL_PATH, FLAGS.TRAINSET_RATIO, SINGLE_TIME=FLAGS.single_time_step)
     num_train_data = data_sampler.num_train
     num_test_data  = data_sampler.num_test
 
@@ -71,23 +73,30 @@ with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
 
     if FLAGS.is_train:
         print ('Training ...')
-        
-        # Batch size x time steps x features.
-        x = tf.placeholder(tf.float32, [None, data_sampler.x_dim, 1] , name='x')
-        y = tf.placeholder(tf.int32, [None, data_sampler.n_classes], name='y')
 
-        net = RNN(x, cell_size=FLAGS.cell_size,
+        # Batch size x time steps x features.
+        #if FLAGS.single_time_step:
+        #    x = tf.placeholder(tf.float32, [None, data_sampler.x_dim, 1] , name='x')
+        #else:
+        x = tf.placeholder(tf.float32, [None, 1, data_sampler.x_dim] , name='x')
+        y = tf.placeholder(tf.int32, [None, data_sampler.n_classes], name='y')
+        x_len = tf.placeholder(tf.int32, [None, ], name='x_len')
+
+        net = RNN(x=x, x_len=x_len,
+                    cell_size=FLAGS.cell_size,
                     num_classes=FLAGS.num_classes,
-                    num_layers=FLAGS.num_layers
+                    num_layers=FLAGS.num_layers,
+                    use_cos=FLAGS.use_cos
                     )
 
         logits, _ = net()
+        prob_op = tf.nn.softmax (logits)
 
         # loss function
         loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=logits, labels=y))
-        correct_prediction = tf.equal(tf.argmax(logits, 1), tf.argmax(y, 1))
+        correct_prediction = tf.equal(tf.argmax(prob_op, 1), tf.argmax(y, 1))
         accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
-        confusion_matrix = tf.contrib.metrics.confusion_matrix(labels=tf.argmax(y, 1), predictions=tf.argmax(logits, 1)) 
+        confusion_matrix = tf.contrib.metrics.confusion_matrix(labels=tf.argmax(y, 1), predictions=tf.argmax(logits, 1))
 
         # Solver
         solver = tf.train.AdamOptimizer(learning_rate=FLAGS.learning_rate).minimize(loss, var_list=net.vars)
@@ -121,9 +130,11 @@ with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
 
         for t in range(0, FLAGS.NUM_EPOCH * STEPS_PER_EPOCH):
             batch_x, batch_y = data_sampler(FLAGS.BATCH_SIZE, is_train=True)
-            _, cost = sess.run([solver, loss], feed_dict={y: batch_y, x: batch_x})
+            # Feed length here
+            batch_xlen = np.array([data_sampler.x_dim] * FLAGS.BATCH_SIZE, dtype=np.int32)
+            _, cost = sess.run([solver, loss], feed_dict={y: batch_y, x: batch_x, x_len: batch_xlen})
             if t % FLAGS.EVAL_PER_STEPS == 0:
-                losses = sess.run([loss], feed_dict={y: batch_y, x: batch_x})
+                losses = sess.run([loss], feed_dict={y: batch_y, x: batch_x, x_len: batch_xlen})
                 print('Iter [%8d] Time [%5.4f] Training Loss = %.4f ' % (t, time.time() - start_time, losses[0]))
             if t % FLAGS.SAVE_CKPT_PER_STEPS == 0:
                 print ('Save to checkpoint')
@@ -131,8 +142,9 @@ with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
                 # evaluation per epoch
             if t % STEPS_PER_EPOCH == 0:
                 test_batch_x, test_batch_y = data_sampler(FLAGS.TEST_BATCH_SIZE, is_train=False)
+                test_batch_xlen = np.array([data_sampler.x_dim] * FLAGS.TEST_BATCH_SIZE, dtype=np.int32)
                 losses, acc, summary, confmat = sess.run([loss, accuracy, summary_op, confusion_matrix],
-                                                            feed_dict={x: test_batch_x, y: test_batch_y})
+                                                            feed_dict={x: test_batch_x, y: test_batch_y, x_len: test_batch_xlen})
                 writer.add_summary(summary, global_step=t)
                 print('Iter [%8d] Time [%5.4f] Validation Accuracy = %.4f' % (t, time.time() - start_time, acc))
                 print('Confusion : \n\t{} \n\t{}'.format(confmat[0], confmat[1]))
@@ -144,13 +156,17 @@ with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
     else: # is_train=false
         print ('Testing')
 
-        x = tf.placeholder(tf.float32, [None, data_sampler.x_dim, 1] , name='x')
+        #if FLAGS.single_time_step:
+        #    x = tf.placeholder(tf.float32, [None, data_sampler.x_dim, 1] , name='x')
+        #else:
+        x = tf.placeholder(tf.float32, [None, 1, data_sampler.x_dim] , name='x')
         y = tf.placeholder(tf.int32, [None, data_sampler.n_classes], name='y')
 
         # allocate empty network
         net = RNN(x, cell_size=FLAGS.cell_size,
                     num_classes=FLAGS.num_classes,
-                    num_layers=FLAGS.num_layers
+                    num_layers=FLAGS.num_layers,
+                    use_cos=FLAGS.use_cos
                     )
         # connect operators
         logits, cell_states = net()
@@ -171,16 +187,16 @@ with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
         else:
             sys.exit ('Can not running test without trained model, please train first, use option --is_train=True')
 
-        correct_prediction = tf.equal(tf.argmax(logits, 1), tf.argmax(y, 1))
+        correct_prediction = tf.equal(tf.argmax(prob_op, 1), tf.argmax(y, 1))
         accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
-        confusion_matrix = tf.contrib.metrics.confusion_matrix(labels=tf.argmax(y, 1), predictions=tf.argmax(logits, 1)) 
+        confusion_matrix = tf.contrib.metrics.confusion_matrix(labels=tf.argmax(y, 1), predictions=tf.argmax(logits, 1))
 
         start_time = time.time()
 
         test_batch_x, test_batch_y = data_sampler(FLAGS.TEST_BATCH_SIZE, is_train=False)
-        probs, acc, confmat, lstm_states = sess.run([prob_op, accuracy, confusion_matrix, cell_states], feed_dict={x: test_batch_x, y: test_batch_y}) 
+        probs, acc, confmat, lstm_states = sess.run([prob_op, accuracy, confusion_matrix, cell_states], feed_dict={x: test_batch_x, y: test_batch_y})
 
-        print('Prediction Time = {}, Validation Accuracy = {} %'.format((time.time() - start_time), acc * 100.0))
+        print('Prediction Time = {}, Testing Accuracy = {} %'.format((time.time() - start_time), acc * 100.0))
         print('Confusion Matrix : \n\t{} \n\t{}'.format(confmat[0], confmat[1]))
 
         """
@@ -190,10 +206,10 @@ with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
         # shape [batch_size, cell_size]
         lstm_h = lstm_states[0]
         lstm_c = lstm_states[1]
-        
+
         ## retrieve weights from loaded variables
         lstm_mat = get_weights_by_name(sess, 'kernel:0')
-        lstm_bias =get_weights_by_name(sess, 'bias:0') 
+        lstm_bias =get_weights_by_name(sess, 'bias:0')
         linout_w = get_weights_by_name(sess, 'w:0')
         linout_b = get_weights_by_name(sess, 'b:0')
 
