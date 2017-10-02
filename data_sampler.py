@@ -4,7 +4,7 @@ import collections
 
 from random import shuffle
 
-def read_data_sets(data_path, label_path, trainset_ratio, normalized=True):
+def read_data_sets(data_path, label_path, trainset_ratio, normalized=True, single_time_step=False):
     ## read data, hard-coded
     images = np.loadtxt(data_path)
     labels = np.loadtxt(label_path)
@@ -20,15 +20,16 @@ def read_data_sets(data_path, label_path, trainset_ratio, normalized=True):
     test_labels = labels[perm[train_num:]]
     print ('Training set contains {} and testing set {}'.format(train_images.shape[0], test_images.shape[0]))
 
-    trainset = DataSet(images=train_images, labels=train_labels, normalized=normalized)
-    testset = DataSet(images=test_images, labels=test_labels, normalized=normalized)
+    trainset = DataSet(images=train_images, labels=train_labels, normalized=normalized, single_time_step=single_time_step)
+    testset = DataSet(images=test_images, labels=test_labels, normalized=normalized, single_time_step=single_time_step)
     return trainset, testset
 
 class DataSampler(object):
-    def __init__ (self, DATA_PATH, LABEL_PATH, TRAINSET_RATIO=0.8, DATA_NORMALIZED=False):
+    def __init__ (self, DATA_PATH, LABEL_PATH, TRAINSET_RATIO=0.8, DATA_NORMALIZED=False, SINGLE_TIME=False):
         #TODO: dont use hard-coded
         self.train_set, self.test_set = read_data_sets(DATA_PATH, LABEL_PATH,
-                                        trainset_ratio=TRAINSET_RATIO, normalized=DATA_NORMALIZED)
+                                        trainset_ratio=TRAINSET_RATIO, normalized=DATA_NORMALIZED,
+                                        single_time_step=SINGLE_TIME)
         self.num_train = self.train_set._num_of_samples
         self.num_test  = self.test_set._num_of_samples
         self.x_dim = self.train_set._image_shape[0]
@@ -42,9 +43,11 @@ class DataSampler(object):
             return self.test_set.next_batch(batch_size)
 
 class DataSet(object):
-    def __init__(self, images, labels, dtpye=np.float32, normalized=True):
-        #self._images = np.expand_dims(images, axis=1)
-        self._images = np.expand_dims(images, axis=2)
+    def __init__(self, images, labels, dtpye=np.float32, normalized=True, single_time_step=False):
+        if single_time_step:
+            self._images = np.expand_dims(images, axis=2)
+        else:
+            self._images = np.expand_dims(images, axis=1)
         self._labels = labels
         self._num_of_samples = images.shape[0]
         self._image_dim = len(images.shape)
