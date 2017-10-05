@@ -39,18 +39,19 @@ class RNN(object):
             print ('Building RNN network')
 
             if self.use_cos:
-                # Resize and so on
-                self.x = tf.squeeze(self.x)
-                cos_w = tf.get_variable("cos_weight", shape=[self.x_dim, self.cell_size], dtype=tf.float32)
-                cos_b = tf.get_variable("cos_bias", shape=[self.cell_size], dtype=tf.float32)
-                x = tf.cos( tf.add(tf.matmul(self.x, cos_w), cos_b))
-                x = tf.expand_dims(x, axis=1)
+                with tf.variable_scope("ParityFilter"):
+                    # Resize and so on
+                    self.x = tf.squeeze(self.x)
+                    cos_w = tf.get_variable("cos_weight", shape=[self.x_dim, self.cell_size], dtype=tf.float32)
+                    cos_b = tf.get_variable("cos_bias", shape=[self.cell_size], dtype=tf.float32)
+                    x = tf.cos( tf.add(tf.matmul(self.x, cos_w), cos_b))
+                    x = tf.expand_dims(x, axis=1)
             else:
                 x = self.x
 
             if self.num_layers == 1:
                 lstm_cell = rnn.BasicLSTMCell(self.cell_size, forget_bias=1.0, 
-                                            reuse=tf.get_variable_scope().reuse)
+                                                reuse=tf.get_variable_scope().reuse)
             else:
                 lstm_cell = []
                 for _ in range(self.num_layers):
@@ -59,29 +60,32 @@ class RNN(object):
                     lstm_cell.append(cell)
                 lstm_cell = rnn.MultiRNNCell(lstm_cell)
 
-            outputs, states = tf.nn.dynamic_rnn(lstm_cell, 
-                                inputs=x,
-                                sequence_length=self.x_len,
-                                dtype=tf.float32,
-                                time_major=False)
+            with tf.variable_scope("LSTM"):
+                outputs, states = tf.nn.dynamic_rnn(lstm_cell, 
+                                    inputs=x,
+                                    sequence_length=self.x_len,
+                                    dtype=tf.float32,
+                                    time_major=False)
+                outputs = tf.transpose(outputs, [1, 0, 2])
+                outshape = outputs[-1].get_shape()
             
             # transpose to time-major, then get time dim
-            outputs = tf.transpose(outputs, [1, 0, 2])
-            outshape = outputs[-1].get_shape()
             print ('outshape = outputs[-1] = {}, this number should be connected to projection layer'.format(outshape))
 
-            w = tf.get_variable("w", [outshape[-1], self.num_classes], 
-                                initializer=tf.random_normal_initializer(),
-                                regularizer=layers.l2_regularizer(1.0))
-            b = tf.get_variable("b", [self.num_classes], 
-                                initializer=tf.constant_initializer(0.001),
-                                regularizer=layers.l2_regularizer(1.0))
-            linout = tf.matmul(outputs[-1], w) + b
+            with tf.variable_scope("ProjectionLayer"):
+                w = tf.get_variable("w", [outshape[-1], self.num_classes], 
+                                    initializer=tf.random_normal_initializer(),
+                                    regularizer=layers.l2_regularizer(1.0))
+                b = tf.get_variable("b", [self.num_classes], 
+                                    initializer=tf.constant_initializer(0.001),
+                                    regularizer=layers.l2_regularizer(1.0))
+                linout = tf.matmul(outputs[-1], w) + b
+                self.logits = linout
+                self.lstm_states = states
+
             if (self.write_summary):
                 variable_summaries(w, self.name + '_w')
                 variable_summaries(b, self.name + '_b')
-            self.logits = linout
-            self.lstm_states = states
 
     def __call__(self):
         return self.logits, self.lstm_states
