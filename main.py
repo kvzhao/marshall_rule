@@ -1,8 +1,10 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-import numpy as np
+import os, sys
 import time
+import json
+import numpy as np
 import tensorflow as tf
 import tensorflow.contrib.rnn as rnn
 
@@ -44,7 +46,15 @@ def get_weights_by_name (sess, name):
     var = [v for v in tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES) if v.name.endswith(name)]
     return np.squeeze(sess.run(var))
 
-# add task_name parser
+def load_configs(path):
+    config_path = os.path.join(path, 'configs.json')
+    print ('Load configurations from {}'.format(config_path))
+    with open(config_path) as file:
+        saved = json.load(file)
+    class Config:
+        def __init__(self, **entries):
+            self.__dict__.update(entries)
+    return Config(**saved)
 
 """
     MAIN PROGRAM
@@ -55,14 +65,12 @@ with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
     num_train_data = data_sampler.num_train
     num_test_data  = data_sampler.num_test
 
-    task_name = FLAGS.task_name + '_' + 'x'.join([str(FLAGS.num_layers),
-                                                str(FLAGS.cell_size),
-                                                str(FLAGS.num_classes),
-                                                str(FLAGS.learning_rate)])
 
-    logfile = '/'.join(['logs', task_name])
-    ckptfile = '/'.join(['checkpoints', task_name])
-    outfile = '/'.join(['lstmw_'+task_name])
+    #logfile = '/'.join(['logs', task_name])
+    #ckptfile = '/'.join(['checkpoints', task_name])
+    logfile = os.path.join('logs', FLAGS.task_name)
+    ckptfile = os.path.join('checkpoints', FLAGS.task_name)
+    outfile = os.path.join('checkpoints','lstmw_' + FLAGS.task_name)
 
     if not tf.gfile.Exists(logfile):
         tf.gfile.MakeDirs(logfile)
@@ -70,6 +78,11 @@ with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
         tf.gfile.MakeDirs(ckptfile)
     if not FLAGS.is_train and not tf.gfile.Exists(outfile):
         tf.gfile.MakeDirs(outfile)
+
+    # Save configurations
+    configs = dict(FLAGS.__flags.items())
+    with open(os.path.join(ckptfile, 'configs.json'), 'w') as file:
+        json.dump(configs, file)
 
     if FLAGS.is_train:
         print ('Training ...')
@@ -161,12 +174,16 @@ with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
         #else:
         x = tf.placeholder(tf.float32, [None, 1, data_sampler.x_dim] , name='x')
         y = tf.placeholder(tf.int32, [None, data_sampler.n_classes], name='y')
+        x_len = tf.placeholder(tf.int32, [None, ], name='x_len')
 
-        # allocate empty network
-        net = RNN(x, cell_size=FLAGS.cell_size,
-                    num_classes=FLAGS.num_classes,
-                    num_layers=FLAGS.num_layers,
-                    use_cos=FLAGS.use_cos
+        CONFIGS = load_configs(ckptfile)
+
+        # allocate network according to CONFIGS
+        net = RNN(x=x, x_len=x_len,
+                    cell_size=CONFIGS.cell_size,
+                    num_classes=CONFIGS.num_classes,
+                    num_layers=CONFIGS.num_layers,
+                    use_cos=CONFIGS.use_cos
                     )
         # connect operators
         logits, cell_states = net()
@@ -193,8 +210,12 @@ with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
 
         start_time = time.time()
 
+        # Test batch size is changable parameters also in tesing stage
         test_batch_x, test_batch_y = data_sampler(FLAGS.TEST_BATCH_SIZE, is_train=False)
-        probs, acc, confmat, lstm_states = sess.run([prob_op, accuracy, confusion_matrix, cell_states], feed_dict={x: test_batch_x, y: test_batch_y})
+        test_batch_xlen = np.array([data_sampler.x_dim] * FLAGS.TEST_BATCH_SIZE, dtype=np.int32)
+
+        probs, acc, confmat, lstm_states = sess.run([prob_op, accuracy, confusion_matrix, cell_states], 
+                            feed_dict={x: test_batch_x, y: test_batch_y, x_len: test_batch_xlen})
 
         print('Prediction Time = {}, Testing Accuracy = {} %'.format((time.time() - start_time), acc * 100.0))
         print('Confusion Matrix : \n\t{} \n\t{}'.format(confmat[0], confmat[1]))

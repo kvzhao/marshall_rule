@@ -1,9 +1,10 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-import numpy as np
 import time
-import sys
+import json
+import sys, os
+import numpy as np
 import tensorflow as tf
 import tensorflow.contrib.rnn as rnn
 
@@ -18,15 +19,10 @@ print ('Version of tensorflow is {}'.format(tf.__version__))
 # management
 tf.app.flags.DEFINE_bool("is_train", False, "Set true for training, false flag will launch testing and analysis")
 tf.app.flags.DEFINE_string("output_name", "results", "Assign objective of task")
-tf.app.flags.DEFINE_string("model_name", "mytask_8x2x0.001", "Directly load the trained model by name")
+tf.app.flags.DEFINE_string("model_name", "mytask", "Directly load the trained model by name")
 tf.app.flags.DEFINE_string("DATA_PATH", "datasetMerged/states_j2j1.txt", "Set path of states file")
 tf.app.flags.DEFINE_string("LABEL_PATH", "datasetMerged/sign_j2j1.txt", "Path to file of sign")
 tf.app.flags.DEFINE_float("TRAINSET_RATIO", 0.0, "Assign ration of training set and reset for testing")
-
-#TODO: Cellsize should refer to model_name
-tf.app.flags.DEFINE_integer("cell_size", 8, "Size of lstm cells")
-tf.app.flags.DEFINE_integer("num_layers", 1, "Number of LSTM Layers")
-tf.app.flags.DEFINE_integer("num_classes", 2, "Number of classes")
 
 FLAGS = tf.app.flags.FLAGS
 
@@ -36,7 +32,15 @@ def get_weights_by_name (sess, name):
     var = [v for v in tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES) if v.name.endswith(name)]
     return np.squeeze(sess.run(var))
 
-# add task_name parser
+def load_configs(path):
+    config_path = os.path.join(path, 'configs.json')
+    print ('Load configurations from {}'.format(config_path))
+    with open(config_path) as file:
+        saved = json.load(file)
+    class Config:
+        def __init__(self, **entries):
+            self.__dict__.update(entries)
+    return Config(**saved)
 
 """
     MAIN PROGRAM
@@ -51,24 +55,30 @@ with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
     ckptfile = '/'.join(['checkpoints', FLAGS.model_name])
     if not tf.gfile.Exists(ckptfile):
         sys.exit ("Model {} not exist!".format(FLAGS.model_name))
-        #tf.gfile.MakeDirs(ckptfile)
     if not tf.gfile.Exists(FLAGS.output_name):
         tf.gfile.MakeDirs(FLAGS.output_name)
+    
+    CONFIGS = load_configs(ckptfile)
 
     print ('=== LOSS SPECTRUM ANALYSIS ===')
 
-    x = tf.placeholder(tf.float32, [None, data_sampler.x_dim] , name='x')
-    y = tf.placeholder(tf.float32, [None, data_sampler.n_classes], name='y')
+    x = tf.placeholder(tf.float32, [None, 1, data_sampler.x_dim] , name='x')
+    y = tf.placeholder(tf.int32, [None, data_sampler.n_classes], name='y')
+    x_len = tf.placeholder(tf.int32, [None, ], name='x_len')
 
     # allocate empty network
-    net = RNN(x, cell_size=FLAGS.cell_size, num_layers=FLAGS.num_layers, num_classes=FLAGS.num_classes)
+    net = RNN(x=x, x_len=x_len,
+                cell_size=CONFIGS.cell_size,
+                num_classes=CONFIGS.num_classes,
+                num_layers=CONFIGS.num_layers,
+                use_cos=CONFIGS.use_cos)
     # connect operators
     logits, cell_states = net()
     print(logits.shape)
     print (y.shape)
     prob_op = tf.nn.softmax (logits)
-    each_loss = tf.nn.softmax_cross_entropy_with_logits(logits=logits, labels=y)
-    cross_entropy = -tf.reduce_sum(y * tf.log(prob_op), reduction_indices=[1])
+    each_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=logits, labels=y))
+    #cross_entropy = -tf.reduce_sum(y * tf.log(prob_op), reduction_indices=[1])
 
     # initialization  (not necessary)
     sess.run(tf.global_variables_initializer())
@@ -93,10 +103,13 @@ with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
 
     FULL_SIZE = data_sampler.num_test
     test_batch_x, test_batch_y = data_sampler(FULL_SIZE, is_train=False)
-    entropies, probs, acc, confmat, losses, states, cpred = sess.run([cross_entropy, prob_op, accuracy, 
+    test_batch_xlen = np.array([data_sampler.x_dim] * FULL_SIZE, dtype=np.int32)
+    probs, acc, confmat, losses, states, cpred = sess.run([prob_op, accuracy, 
                                                                     confusion_matrix, each_loss, cell_states,
                                                                     tf.cast(correct_prediction, tf.float32)],
-                                                                feed_dict={x: test_batch_x, y: test_batch_y}) 
+                                                                    feed_dict={x: test_batch_x, 
+                                                                                y: test_batch_y, 
+                                                                                x_len:test_batch_xlen}) 
 
     print('Prediction Time = {}, Validation Accuracy = {} %'.format((time.time() - start_time), acc * 100.0))
     print('Confusion Matrix : \n\t{} \n\t{}'.format(confmat[0], confmat[1]))
